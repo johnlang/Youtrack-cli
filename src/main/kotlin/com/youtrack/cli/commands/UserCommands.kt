@@ -16,7 +16,7 @@ class UserCommand : CliktCommand(
     name = "user",
     help = "Browse YouTrack users"
 ) {
-    init { subcommands(UserList(), UserGet()) }
+    init { subcommands(UserList(), UserGet(), UserMe()) }
     override fun run() = Unit
 }
 
@@ -36,6 +36,13 @@ class UserGet : CliktCommand(name = "get", help = "Show details for a user by lo
 
     override fun run() = withClient { client ->
         val user = client.getUser(loginOrId)
+        printUserFull(user)
+    }
+}
+
+class UserMe : CliktCommand(name = "me", help = "Show the currently authenticated user's profile") {
+    override fun run() = withClient { client ->
+        val user = client.getCurrentUser()
         printUserFull(user)
     }
 }

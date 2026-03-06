@@ -254,6 +254,58 @@ class YouTrackClient(private val config: Config) {
         return json.decodeFromString(raw)
     }
 
+    fun getCurrentUser(): User {
+        val raw = get(
+            "/api/users/me?fields=id,login,fullName,email,groups(id,name)"
+        ).requireSuccess()
+        return json.decodeFromString(raw)
+    }
+
+    // ── Articles ──────────────────────────────────────────────────────────────
+
+    private val articleFields = "id,idReadable,summary,content,created,updated," +
+        "project(id,name,shortName),author(id,login,fullName),tags(id,name)," +
+        "parentArticle(id,idReadable,summary)"
+
+    fun listArticles(projectId: String? = null, top: Int = 25, skip: Int = 0): List<Article> {
+        val query = if (projectId != null) {
+            "&query=${java.net.URLEncoder.encode("project: $projectId", "UTF-8")}"
+        } else ""
+        val raw = get("/api/articles?fields=$articleFields&\$top=$top&\$skip=$skip$query")
+            .requireSuccess()
+        return try { json.decodeFromString(raw) } catch (_: Exception) { emptyList() }
+    }
+
+    fun getArticle(articleId: String): Article {
+        val raw = get(
+            "/api/articles/$articleId?fields=$articleFields,childArticles(id,idReadable,summary)"
+        ).requireSuccess()
+        return json.decodeFromString(raw)
+    }
+
+    fun createArticle(projectId: String, summary: String, content: String?): Article {
+        val payload = buildJsonObject {
+            put("summary", summary)
+            if (content != null) put("content", content)
+            put("project", buildJsonObject { put("id", projectId) })
+        }
+        val raw = post("/api/articles?fields=$articleFields", payload.toString()).requireSuccess()
+        return json.decodeFromString(raw)
+    }
+
+    fun updateArticle(articleId: String, summary: String?, content: String?): Article {
+        val payload = buildJsonObject {
+            if (summary != null) put("summary", summary)
+            if (content != null) put("content", content)
+        }
+        val raw = patch("/api/articles/$articleId?fields=$articleFields", payload.toString()).requireSuccess()
+        return json.decodeFromString(raw)
+    }
+
+    fun deleteArticle(articleId: String) {
+        delete("/api/articles/$articleId").requireSuccess()
+    }
+
     // ── Tags ──────────────────────────────────────────────────────────────────
 
     fun listTags(top: Int = 100): List<Tag> {

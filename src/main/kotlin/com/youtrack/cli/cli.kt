@@ -32,6 +32,7 @@ fun main(args: Array<String>) {
             ProjectCommand(),
             UserCommand(),
             TagCommand(),
+            ArticleCommand(),
             BrowseCommand()
         )
         .main(args)

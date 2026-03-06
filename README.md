@@ -23,8 +23,9 @@ yt activity user john.smith
 | **Search** | Full YouTrack query language · Pagination · Verbose mode |
 | **Agile Boards** | List boards · View sprints with issues · Column layout |
 | **Activity** | Recent activity per user · Full history per issue |
-| **Users** | List users · View user details |
+| **Users** | List users · View user details · Show current user (`yt user me`) |
 | **Tags** | List all tags |
+| **Articles** | List, read, create, update, delete knowledge base articles |
 | **Projects** | List all accessible projects |
 | **Config** | Secure token storage · Default project · Masked display |
 
@@ -143,7 +144,13 @@ yt issue workitem add DEMO-42 --duration 1h30m --description "Fixed the bug"
 # 13. Users & tags
 yt user list
 yt user get john.smith
+yt user me
 yt tag list
+
+# 14. Knowledge base articles
+yt article list --project DEMO
+yt article get DEMO-A-1
+yt article create --project DEMO --summary "How to reset password" --content "Go to profile..."
 ```
 
 ---
@@ -184,9 +191,16 @@ yt
 │   └── issue     <ISSUE_ID> [--top]
 ├── user
 │   ├── list      [--top]
-│   └── get       <LOGIN>
-└── tag
-    └── list      [--top]
+│   ├── get       <LOGIN>
+│   └── me
+├── tag
+│   └── list      [--top]
+└── article
+    ├── list      [--project] [--top] [--skip]
+    ├── get       <ARTICLE_ID>
+    ├── create    --summary [--project] [--content]
+    ├── update    <ARTICLE_ID> [--summary] [--content]
+    └── delete    <ARTICLE_ID> [--yes]
 ```
 
 Every command supports `--help` for detailed usage.
@@ -237,6 +251,7 @@ src/main/kotlin/com/youtrack/cli/
     ├── ProjectCommands.kt     yt project *
     ├── UserCommands.kt        yt user *
     ├── TagCommands.kt         yt tag *
+    ├── ArticleCommands.kt     yt article *
     └── BrowseCommand.kt       yt browse / yt b
 ```
 

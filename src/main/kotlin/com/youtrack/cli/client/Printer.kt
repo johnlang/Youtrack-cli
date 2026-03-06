@@ -193,3 +193,37 @@ fun printUserFull(u: com.youtrack.cli.model.User) {
     }
     t.println(bold("─".repeat(50)))
 }
+
+fun printArticleShort(a: com.youtrack.cli.model.Article) {
+    val id = cyan(a.idReadable.ifBlank { a.id })
+    val proj = a.project?.shortName?.let { " [$it]" } ?: ""
+    t.println("  $id$proj  ${bold(a.summary)}")
+}
+
+fun printArticleFull(a: com.youtrack.cli.model.Article) {
+    t.println()
+    t.println(bold("─".repeat(70)))
+    t.println("${bold("ID:")}          ${cyan(a.idReadable.ifBlank { a.id })}")
+    t.println("${bold("Title:")}       ${bold(a.summary)}")
+    t.println("${bold("Project:")}     ${a.project?.name ?: "—"} (${a.project?.shortName ?: ""})")
+    t.println("${bold("Author:")}      ${a.author?.fullName ?: a.author?.login ?: "—"}")
+    if (a.parentArticle != null) {
+        t.println("${bold("Parent:")}      ${cyan(a.parentArticle.idReadable.ifBlank { a.parentArticle.id })}  ${a.parentArticle.summary}")
+    }
+    if (!a.tags.isNullOrEmpty()) {
+        t.println("${bold("Tags:")}        ${a.tags.joinToString(", ") { it.name }}")
+    }
+    if (a.created != null) t.println("${bold("Created:")}     ${a.created.fmtDate()}")
+    if (a.updated != null) t.println("${bold("Updated:")}     ${a.updated.fmtDate()}")
+    if (!a.childArticles.isNullOrEmpty()) {
+        t.println()
+        t.println(bold("Sub-articles (${a.childArticles.size}):"))
+        a.childArticles.forEach { t.println("  ${cyan(it.idReadable.ifBlank { it.id })}  ${it.summary}") }
+    }
+    if (!a.content.isNullOrBlank()) {
+        t.println()
+        t.println(bold("Content:"))
+        t.println(a.content)
+    }
+    t.println(bold("─".repeat(70)))
+}

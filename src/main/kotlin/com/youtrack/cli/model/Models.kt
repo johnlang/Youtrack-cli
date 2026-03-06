@@ -199,6 +199,23 @@ data class UserGroup(
     val name: String = ""
 )
 
+// ── Articles ──────────────────────────────────────────────────────────────────
+
+@Serializable
+data class Article(
+    val id: String = "",
+    val idReadable: String = "",
+    val summary: String = "",
+    val content: String? = null,
+    val created: Long? = null,
+    val updated: Long? = null,
+    val project: ProjectRef? = null,
+    val author: UserRef? = null,
+    val tags: List<Tag>? = null,
+    val childArticles: List<Article>? = null,
+    val parentArticle: Article? = null
+)
+
 // ── Project ───────────────────────────────────────────────────────────────────
 
 @Serializable

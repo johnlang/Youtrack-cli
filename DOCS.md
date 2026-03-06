@@ -37,9 +37,16 @@ The binary is invoked as `yt`.
 10. [Users](#users)
     - [List users](#list-users)
     - [Get user](#get-user)
+    - [Current user](#current-user)
 11. [Tags](#tags)
-12. [Exit Codes](#exit-codes)
-13. [YouTrack Query Language](#youtrack-query-language)
+12. [Articles](#articles)
+    - [List articles](#list-articles)
+    - [Get article](#get-article)
+    - [Create article](#create-article)
+    - [Update article](#update-article)
+    - [Delete article](#delete-article)
+13. [Exit Codes](#exit-codes)
+14. [YouTrack Query Language](#youtrack-query-language)
 
 ---
 
@@ -754,6 +761,27 @@ Groups:    Developers, All Users
 
 ---
 
+### Current User
+
+Show the profile of the currently authenticated user (token owner).
+
+```bash
+yt user me
+```
+
+**Output:**
+```
+──────────────────────────────────────────────────
+Login:     john.smith
+Name:      John Smith
+Email:     john.smith@example.com
+ID:        1-101
+Groups:    Developers, All Users
+──────────────────────────────────────────────────
+```
+
+---
+
 ## Tags
 
 ### List Tags
@@ -785,6 +813,155 @@ Tags (5):
 
 Use the tag name in issue search queries: `tag: regression`.
 To add a tag to an issue, use: `yt issue command DEMO-42 "tag regression"`.
+
+---
+
+## Articles
+
+YouTrack's knowledge base stores documentation as articles. Articles belong to projects and support nesting (parent/child).
+
+### List Articles
+
+```
+yt article list [--project <PROJECT>] [--top <N>] [--skip <N>]
+```
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--project`, `-p` | all projects | Filter by project short name |
+| `--top`, `-n` | 25 | Maximum results |
+| `--skip` | 0 | Skip N results (pagination) |
+
+**Examples:**
+```bash
+# All articles across all projects
+yt article list
+
+# Articles in project DEMO
+yt article list --project DEMO
+
+# Paginate
+yt article list --project DEMO --top 10 --skip 10
+```
+
+**Output:**
+```
+Articles in 'DEMO' (3):
+  DEMO-A-1 [DEMO]  Getting started guide
+  DEMO-A-2 [DEMO]  API authentication
+  DEMO-A-3 [DEMO]  Troubleshooting FAQ
+```
+
+---
+
+### Get Article
+
+Show full content and metadata of an article.
+
+```
+yt article get <ARTICLE_ID>
+```
+
+**Example:**
+```bash
+yt article get DEMO-A-1
+```
+
+**Output:**
+```
+──────────────────────────────────────────────────────────────────────
+ID:          DEMO-A-1
+Title:       Getting started guide
+Project:     Demo Project (DEMO)
+Author:      Jane Doe
+Tags:        onboarding, public
+Created:     2024-01-10 09:00
+Updated:     2024-01-20 15:30
+
+Sub-articles (2):
+  DEMO-A-4  Installation steps
+  DEMO-A-5  First configuration
+
+Content:
+Welcome to the project! This guide walks you through...
+──────────────────────────────────────────────────────────────────────
+```
+
+---
+
+### Create Article
+
+Create a new knowledge base article.
+
+```
+yt article create --summary <TITLE> [--project <PROJECT>] [--content <TEXT>]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--summary`, `-s` | yes | Article title |
+| `--project`, `-p` | yes (or default) | Target project |
+| `--content`, `-c` | no | Article body text |
+
+**Example:**
+```bash
+yt article create --project DEMO --summary "How to reset your password" \
+  --content "Navigate to Profile → Account Security → Change password."
+```
+
+**Output:**
+```
+✓ Created article DEMO-A-6: How to reset your password
+```
+
+---
+
+### Update Article
+
+Update the title or content of an existing article.
+
+```
+yt article update <ARTICLE_ID> [--summary <TITLE>] [--content <TEXT>]
+```
+
+**Examples:**
+```bash
+# Update title only
+yt article update DEMO-A-6 --summary "How to reset your password (updated)"
+
+# Update content
+yt article update DEMO-A-6 --content "New instructions..."
+
+# Update both
+yt article update DEMO-A-6 -s "New title" -c "New content"
+```
+
+**Output:**
+```
+✓ Updated DEMO-A-6
+```
+
+---
+
+### Delete Article
+
+Permanently delete an article. Prompts for confirmation unless `--yes` is passed.
+
+```
+yt article delete <ARTICLE_ID> [--yes]
+```
+
+**Examples:**
+```bash
+yt article delete DEMO-A-6
+yt article delete DEMO-A-6 --yes
+```
+
+**Output:**
+```
+Delete article DEMO-A-6? This cannot be undone. [y/N] y
+✓ Deleted article DEMO-A-6
+```
 
 ---
 
