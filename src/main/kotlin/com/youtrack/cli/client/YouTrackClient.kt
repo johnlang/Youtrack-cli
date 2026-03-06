@@ -188,4 +188,78 @@ class YouTrackClient(private val config: Config) {
         ).requireSuccess()
         return try { json.decodeFromString(raw) } catch (_: Exception) { emptyList() }
     }
+
+    // ── Issue Links ───────────────────────────────────────────────────────────
+
+    fun getIssueLinks(issueId: String): List<IssueLink> {
+        val raw = get(
+            "/api/issues/$issueId/links?fields=id,direction," +
+                "linkType(id,name,directed,sourceToTarget,targetToSource)," +
+                "issues(id,idReadable,summary,resolved)"
+        ).requireSuccess()
+        return try { json.decodeFromString(raw) } catch (_: Exception) { emptyList() }
+    }
+
+    fun getLinkTypes(): List<IssueLinkType> {
+        val raw = get(
+            "/api/issueLinkTypes?fields=id,name,directed,sourceToTarget,targetToSource&\$top=100"
+        ).requireSuccess()
+        return try { json.decodeFromString(raw) } catch (_: Exception) { emptyList() }
+    }
+
+    /** Link [issueId] to [targetId] using a command string, e.g. "relates to DEMO-2". */
+    fun linkIssue(issueId: String, linkCommand: String) = applyCommand(issueId, linkCommand)
+
+    // ── Work Items ────────────────────────────────────────────────────────────
+
+    fun listWorkItems(issueId: String, top: Int = 50): List<WorkItem> {
+        val raw = get(
+            "/api/issues/$issueId/timeTracking/workItems?" +
+                "fields=id,date,duration(minutes,presentation),text,author(id,login,fullName)&\$top=$top"
+        ).requireSuccess()
+        return try { json.decodeFromString(raw) } catch (_: Exception) { emptyList() }
+    }
+
+    fun addWorkItem(issueId: String, duration: String, description: String?, date: Long?): WorkItem {
+        val payload = buildJsonObject {
+            put("duration", buildJsonObject { put("presentation", duration) })
+            if (description != null) put("text", description)
+            if (date != null) put("date", date)
+        }
+        val raw = post(
+            "/api/issues/$issueId/timeTracking/workItems?" +
+                "fields=id,date,duration(minutes,presentation),text,author(id,login,fullName)",
+            payload.toString()
+        ).requireSuccess()
+        return json.decodeFromString(raw)
+    }
+
+    fun deleteWorkItem(issueId: String, workItemId: String) {
+        delete("/api/issues/$issueId/timeTracking/workItems/$workItemId").requireSuccess()
+    }
+
+    // ── Users ─────────────────────────────────────────────────────────────────
+
+    fun listUsers(top: Int = 50): List<User> {
+        val raw = get(
+            "/api/users?fields=id,login,fullName,email&\$top=$top"
+        ).requireSuccess()
+        return try { json.decodeFromString(raw) } catch (_: Exception) { emptyList() }
+    }
+
+    fun getUser(loginOrId: String): User {
+        val raw = get(
+            "/api/users/$loginOrId?fields=id,login,fullName,email,groups(id,name)"
+        ).requireSuccess()
+        return json.decodeFromString(raw)
+    }
+
+    // ── Tags ──────────────────────────────────────────────────────────────────
+
+    fun listTags(top: Int = 100): List<Tag> {
+        val raw = get(
+            "/api/tags?fields=id,name&\$top=$top"
+        ).requireSuccess()
+        return try { json.decodeFromString(raw) } catch (_: Exception) { emptyList() }
+    }
 }

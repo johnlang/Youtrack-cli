@@ -18,16 +18,28 @@ The binary is invoked as `yt`.
    - [Delete issue](#delete-issue)
    - [Add comment](#add-comment)
    - [Apply command](#apply-command)
-5. [Search](#search)
-6. [Agile Boards](#agile-boards)
+5. [Issue Links](#issue-links)
+   - [List links](#list-links)
+   - [Link issues](#link-issues)
+   - [List link types](#list-link-types)
+6. [Work Items](#work-items)
+   - [List work items](#list-work-items)
+   - [Add work item](#add-work-item)
+   - [Delete work item](#delete-work-item)
+7. [Search](#search)
+8. [Agile Boards](#agile-boards)
    - [List boards](#list-boards)
    - [Get board](#get-board)
    - [View sprint](#view-sprint)
-7. [Activity](#activity)
+9. [Activity](#activity)
    - [User activity](#user-activity)
    - [Issue activity](#issue-activity)
-8. [Exit Codes](#exit-codes)
-9. [YouTrack Query Language](#youtrack-query-language)
+10. [Users](#users)
+    - [List users](#list-users)
+    - [Get user](#get-user)
+11. [Tags](#tags)
+12. [Exit Codes](#exit-codes)
+13. [YouTrack Query Language](#youtrack-query-language)
 
 ---
 
@@ -346,6 +358,156 @@ yt issue command DEMO-42 "Priority Major State In Progress assignee me"
 
 ---
 
+## Issue Links
+
+### List Links
+
+Show all links (relations) on an issue.
+
+```
+yt issue links <ISSUE_ID>
+```
+
+**Example:**
+```bash
+yt issue links DEMO-42
+```
+
+**Output:**
+```
+Links for DEMO-42:
+  relates to:
+    DEMO-10  API returns wrong error code
+  subtask of:
+    BACK-5   Auth service refactor
+  duplicated by:
+    DEMO-51  [resolved]  Same 500 on login
+```
+
+---
+
+### Link Issues
+
+Link an issue to another using a relation command string.
+Run `yt issue linktypes` first to see the exact relation phrases for your instance.
+
+```
+yt issue link <ISSUE_ID> <LINK_COMMAND>
+```
+
+`LINK_COMMAND` combines the relation phrase and the target issue ID, e.g. `"relates to DEMO-10"`.
+
+**Examples:**
+```bash
+yt issue link DEMO-42 "relates to DEMO-10"
+yt issue link DEMO-42 "subtask of BACK-5"
+yt issue link DEMO-42 "duplicates MOB-7"
+```
+
+**Output:**
+```
+✓ Link applied to DEMO-42: relates to DEMO-10
+```
+
+---
+
+### List Link Types
+
+Display all issue link type names and their directed phrases.
+
+```bash
+yt issue linktypes
+```
+
+**Output:**
+```
+Issue Link Types (4):
+  Relates  (relates to / is related to)
+  Subtask  (subtask of / parent for)
+  Duplicate  (duplicates)
+  Depend  (depends on / is required for)
+```
+
+Use the direction phrases (e.g. `relates to`, `subtask of`) as the verb in `yt issue link`.
+
+---
+
+## Work Items
+
+Work items record time spent on an issue (time tracking).
+
+### List Work Items
+
+```
+yt issue workitem list <ISSUE_ID> [--top <N>]
+```
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--top`, `-n` | 50 | Maximum work items to return |
+
+**Example:**
+```bash
+yt issue workitem list DEMO-42
+```
+
+**Output:**
+```
+Work items for DEMO-42 (2):
+  2-1  1h 30m  john.smith  2024-01-16 14:00  — Fixed JWT refresh logic
+  2-2  45m     jane.doe    2024-01-17 09:30
+```
+
+---
+
+### Add Work Item
+
+Log time spent on an issue.
+
+```
+yt issue workitem add <ISSUE_ID> --duration <DURATION> [--description <TEXT>] [--date <YYYY-MM-DD>]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--duration`, `-d` | yes | Duration string, e.g. `1h30m`, `2h`, `45m` |
+| `--description`, `--desc` | no | Description of work done |
+| `--date` | no | Date of work as `YYYY-MM-DD` (defaults to today) |
+
+**Examples:**
+```bash
+# Log 1h 30m with a description
+yt issue workitem add DEMO-42 --duration 1h30m --description "Implemented JWT refresh"
+
+# Log 45 minutes for a specific date
+yt issue workitem add DEMO-42 -d 45m --date 2024-01-15
+```
+
+**Output:**
+```
+✓ Work item logged on DEMO-42 (id: 2-3): 1h 30m
+```
+
+---
+
+### Delete Work Item
+
+```
+yt issue workitem delete <ISSUE_ID> <WORK_ITEM_ID> [--yes]
+```
+
+**Example:**
+```bash
+yt issue workitem delete DEMO-42 2-3 --yes
+```
+
+**Output:**
+```
+✓ Deleted work item 2-3 from DEMO-42
+```
+
+---
+
 ## Search
 
 Search issues using the full [YouTrack query language](https://www.jetbrains.com/help/youtrack/server/Search-and-Command-Attributes.html).
@@ -534,6 +696,95 @@ Activity for 'DEMO-42' (4 events):
   2024-01-16 14:10  John Smith  [CustomField]  DEMO-42: Login page broken  (was: Open) → In Progress
   2024-01-16 14:10  John Smith  [Links]        DEMO-42: Login page broken → PR #234
 ```
+
+---
+
+## Users
+
+### List Users
+
+List all users visible with the configured token.
+
+```
+yt user list [--top <N>]
+```
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--top`, `-n` | 50 | Maximum users to return |
+
+**Example:**
+```bash
+yt user list
+```
+
+**Output:**
+```
+Users (3):
+  john.smith  John Smith  <john.smith@example.com>
+  jane.doe    Jane Doe    <jane.doe@example.com>
+  bot.ci      CI Bot
+```
+
+---
+
+### Get User
+
+Show full details for a single user.
+
+```
+yt user get <LOGIN>
+```
+
+**Example:**
+```bash
+yt user get john.smith
+```
+
+**Output:**
+```
+──────────────────────────────────────────────────
+Login:     john.smith
+Name:      John Smith
+Email:     john.smith@example.com
+ID:        1-101
+Groups:    Developers, All Users
+──────────────────────────────────────────────────
+```
+
+---
+
+## Tags
+
+### List Tags
+
+List all tags accessible with the configured token.
+
+```
+yt tag list [--top <N>]
+```
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--top`, `-n` | 100 | Maximum tags to return |
+
+**Example:**
+```bash
+yt tag list
+```
+
+**Output:**
+```
+Tags (5):
+  6-0  regression
+  6-1  auth
+  6-2  performance
+  6-3  ui
+  6-4  blocked
+```
+
+Use the tag name in issue search queries: `tag: regression`.
+To add a tag to an issue, use: `yt issue command DEMO-42 "tag regression"`.
 
 ---
 

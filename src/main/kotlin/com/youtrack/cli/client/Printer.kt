@@ -139,3 +139,57 @@ fun printProjectShort(p: com.youtrack.cli.model.Project) {
     t.println("  ${cyan(p.shortName)}  ${bold(p.name)}  (id: ${p.id})")
     if (!p.description.isNullOrBlank()) t.println("       ${p.description}")
 }
+
+fun printIssueLinks(issueId: String, links: List<com.youtrack.cli.model.IssueLink>) {
+    t.println()
+    t.println(bold("Links for $issueId:"))
+    for (link in links) {
+        if (link.issues.isEmpty()) continue
+        val lt = link.linkType
+        val label = when (link.direction) {
+            "OUTWARD" -> lt?.sourceToTarget ?: lt?.name ?: "linked"
+            "INWARD"  -> lt?.targetToSource ?: lt?.name ?: "linked"
+            else      -> lt?.name ?: "linked"
+        }
+        t.println("  ${yellow(label)}:")
+        for (issue in link.issues) {
+            val resolved = if (issue.resolved != null) red(" [resolved]") else ""
+            t.println("    ${cyan(issue.idReadable.ifBlank { issue.id })}$resolved  ${issue.summary}")
+        }
+    }
+}
+
+fun printLinkType(lt: com.youtrack.cli.model.IssueLinkType) {
+    val direction = if (lt.directed) {
+        "${yellow(lt.sourceToTarget)} / ${yellow(lt.targetToSource)}"
+    } else {
+        yellow(lt.name)
+    }
+    t.println("  ${bold(lt.name)}  ($direction)")
+}
+
+fun printWorkItem(item: com.youtrack.cli.model.WorkItem) {
+    val who = item.author?.fullName ?: item.author?.login ?: "?"
+    val when_ = item.date?.fmtDate() ?: ""
+    val dur = item.duration?.presentation ?: "?"
+    val desc = if (!item.text.isNullOrBlank()) "  — ${item.text}" else ""
+    t.println("  ${cyan(item.id)}  ${bold(dur)}  $who  $when_$desc")
+}
+
+fun printUserShort(u: com.youtrack.cli.model.User) {
+    val email = if (!u.email.isNullOrBlank()) "  <${u.email}>" else ""
+    t.println("  ${cyan(u.login)}  ${bold(u.fullName ?: u.login)}$email")
+}
+
+fun printUserFull(u: com.youtrack.cli.model.User) {
+    t.println()
+    t.println(bold("─".repeat(50)))
+    t.println("${bold("Login:")}     ${cyan(u.login)}")
+    t.println("${bold("Name:")}      ${u.fullName ?: "—"}")
+    t.println("${bold("Email:")}     ${u.email ?: "—"}")
+    t.println("${bold("ID:")}        ${u.id}")
+    if (!u.groups.isNullOrEmpty()) {
+        t.println("${bold("Groups:")}    ${u.groups.joinToString(", ") { it.name }}")
+    }
+    t.println(bold("─".repeat(50)))
+}

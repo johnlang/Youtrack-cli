@@ -17,10 +17,14 @@ yt activity user john.smith
 | Area | Capabilities |
 |------|-------------|
 | **Issues** | Create, read, update, delete · Add comments · Apply YouTrack commands |
+| **Issue Links** | List links · Link issues by relation type · View link types |
+| **Work Items** | Log time · List & delete work items (time tracking) |
 | **Browse** | Open any issue instantly in the browser (`yt b DEMO-1`) |
 | **Search** | Full YouTrack query language · Pagination · Verbose mode |
 | **Agile Boards** | List boards · View sprints with issues · Column layout |
 | **Activity** | Recent activity per user · Full history per issue |
+| **Users** | List users · View user details |
+| **Tags** | List all tags |
 | **Projects** | List all accessible projects |
 | **Config** | Secure token storage · Default project · Masked display |
 
@@ -126,6 +130,20 @@ yt board sprint 112-1 201-2      # issues in sprint
 # 10. Activity
 yt activity user john.smith
 yt activity issue DEMO-42
+
+# 11. Issue links
+yt issue links DEMO-42                          # view all links
+yt issue linktypes                              # see available relation names
+yt issue link DEMO-42 "relates to DEMO-10"     # link two issues
+
+# 12. Work items (time tracking)
+yt issue workitem list DEMO-42
+yt issue workitem add DEMO-42 --duration 1h30m --description "Fixed the bug"
+
+# 13. Users & tags
+yt user list
+yt user get john.smith
+yt tag list
 ```
 
 ---
@@ -147,16 +165,28 @@ yt
 │   ├── update    <ISSUE_ID> [--summary] [--description]
 │   ├── delete    <ISSUE_ID> [--yes]
 │   ├── comment   <ISSUE_ID> --text
-│   └── command   <ISSUE_ID> <COMMAND>
+│   ├── command   <ISSUE_ID> <COMMAND>
+│   ├── links     <ISSUE_ID>
+│   ├── link      <ISSUE_ID> <LINK_COMMAND>
+│   ├── linktypes
+│   └── workitem
+│       ├── list   <ISSUE_ID> [--top]
+│       ├── add    <ISSUE_ID> --duration <DUR> [--description] [--date]
+│       └── delete <ISSUE_ID> <WORK_ITEM_ID> [--yes]
 ├── browse (b)    <ISSUE_ID>
 ├── search        <QUERY> [--top] [--skip] [--verbose]
 ├── board
 │   ├── list
 │   ├── get       <BOARD_ID>
 │   └── sprint    <BOARD_ID> [SPRINT_ID]
-└── activity
-    ├── user      <LOGIN> [--top]
-    └── issue     <ISSUE_ID> [--top]
+├── activity
+│   ├── user      <LOGIN> [--top]
+│   └── issue     <ISSUE_ID> [--top]
+├── user
+│   ├── list      [--top]
+│   └── get       <LOGIN>
+└── tag
+    └── list      [--top]
 ```
 
 Every command supports `--help` for detailed usage.
@@ -205,6 +235,8 @@ src/main/kotlin/com/youtrack/cli/
     ├── BoardCommands.kt       yt board *
     ├── ActivityCommands.kt    yt activity *
     ├── ProjectCommands.kt     yt project *
+    ├── UserCommands.kt        yt user *
+    ├── TagCommands.kt         yt tag *
     └── BrowseCommand.kt       yt browse / yt b
 ```
 

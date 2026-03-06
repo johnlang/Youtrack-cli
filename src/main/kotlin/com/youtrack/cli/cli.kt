@@ -30,6 +30,8 @@ fun main(args: Array<String>) {
             BoardCommand(),
             ActivityCommand(),
             ProjectCommand(),
+            UserCommand(),
+            TagCommand(),
             BrowseCommand()
         )
         .main(args)

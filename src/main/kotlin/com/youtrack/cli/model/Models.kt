@@ -146,6 +146,59 @@ data class ActivityCategory(
     val id: String = ""
 )
 
+// ── Issue Links ───────────────────────────────────────────────────────────────
+
+@Serializable
+data class IssueLinkType(
+    val id: String = "",
+    val name: String = "",
+    val directed: Boolean = false,
+    val sourceToTarget: String = "",
+    val targetToSource: String = ""
+)
+
+@Serializable
+data class IssueLink(
+    val id: String = "",
+    val direction: String = "",   // "OUTWARD", "INWARD", "BOTH"
+    val linkType: IssueLinkType? = null,
+    val issues: List<Issue> = emptyList()
+)
+
+// ── Work Items ────────────────────────────────────────────────────────────────
+
+@Serializable
+data class WorkItemDuration(
+    val minutes: Int = 0,
+    val presentation: String = ""
+)
+
+@Serializable
+data class WorkItem(
+    val id: String = "",
+    val date: Long? = null,
+    val duration: WorkItemDuration? = null,
+    val text: String? = null,
+    val author: UserRef? = null
+)
+
+// ── Users ─────────────────────────────────────────────────────────────────────
+
+@Serializable
+data class User(
+    val id: String = "",
+    val login: String = "",
+    val fullName: String? = null,
+    val email: String? = null,
+    val groups: List<UserGroup>? = null
+)
+
+@Serializable
+data class UserGroup(
+    val id: String = "",
+    val name: String = ""
+)
+
 // ── Project ───────────────────────────────────────────────────────────────────
 
 @Serializable
