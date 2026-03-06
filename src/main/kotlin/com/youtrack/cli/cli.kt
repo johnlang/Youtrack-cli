@@ -29,7 +29,8 @@ fun main(args: Array<String>) {
             SearchCommand(),
             BoardCommand(),
             ActivityCommand(),
-            ProjectCommand()
+            ProjectCommand(),
+            BrowseCommand()
         )
         .main(args)
 }

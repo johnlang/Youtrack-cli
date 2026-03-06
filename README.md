@@ -17,6 +17,7 @@ yt activity user john.smith
 | Area | Capabilities |
 |------|-------------|
 | **Issues** | Create, read, update, delete · Add comments · Apply YouTrack commands |
+| **Browse** | Open any issue instantly in the browser (`yt b DEMO-1`) |
 | **Search** | Full YouTrack query language · Pagination · Verbose mode |
 | **Agile Boards** | List boards · View sprints with issues · Column layout |
 | **Activity** | Recent activity per user · Full history per issue |
@@ -102,24 +103,27 @@ yt issue list
 # 3. View a specific issue
 yt issue get DEMO-42
 
-# 4. Create an issue
+# 4. Open an issue in the browser
+yt b DEMO-42
+
+# 5. Create an issue
 yt issue create --summary "Login broken after update" --description "Returns 500 on /login"
 
-# 5. Update an issue
+# 6. Update an issue
 yt issue update DEMO-55 --summary "Login broken on iOS 17"
 
-# 6. Apply a command (state / priority / assignee)
+# 7. Apply a command (state / priority / assignee)
 yt issue command DEMO-55 "Priority Critical State In Progress"
 
-# 7. Search
+# 8. Search
 yt search "assignee: me #Unresolved"
 
-# 8. Browse boards
+# 9. Browse boards
 yt board list
 yt board sprint 112-1            # list sprints
 yt board sprint 112-1 201-2      # issues in sprint
 
-# 9. Activity
+# 10. Activity
 yt activity user john.smith
 yt activity issue DEMO-42
 ```
@@ -144,6 +148,7 @@ yt
 │   ├── delete    <ISSUE_ID> [--yes]
 │   ├── comment   <ISSUE_ID> --text
 │   └── command   <ISSUE_ID> <COMMAND>
+├── browse (b)    <ISSUE_ID>
 ├── search        <QUERY> [--top] [--skip] [--verbose]
 ├── board
 │   ├── list
@@ -199,7 +204,8 @@ src/main/kotlin/com/youtrack/cli/
     ├── SearchCommand.kt       yt search
     ├── BoardCommands.kt       yt board *
     ├── ActivityCommands.kt    yt activity *
-    └── ProjectCommands.kt     yt project *
+    ├── ProjectCommands.kt     yt project *
+    └── BrowseCommand.kt       yt browse / yt b
 ```
 
 ### Dependencies
