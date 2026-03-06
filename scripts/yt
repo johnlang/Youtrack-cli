@@ -1,0 +1,14 @@
+#!/bin/sh
+# YouTrack CLI launcher
+# Place this file in /usr/local/bin/yt after building the fat JAR
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+JAR="${SCRIPT_DIR}/../build/libs/yt.jar"
+
+if [ ! -f "$JAR" ]; then
+  echo "yt.jar not found at $JAR"
+  echo "Run './gradlew shadowJar' first."
+  exit 1
+fi
+
+exec java -jar "$JAR" "$@"

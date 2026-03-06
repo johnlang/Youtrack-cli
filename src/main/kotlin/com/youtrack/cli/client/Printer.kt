@@ -1,0 +1,141 @@
+package com.youtrack.cli.client
+
+import com.github.ajalt.mordant.rendering.TextColors.*
+import com.github.ajalt.mordant.rendering.TextStyles.*
+import com.github.ajalt.mordant.terminal.Terminal
+import com.youtrack.cli.model.*
+import java.text.SimpleDateFormat
+import java.util.Date
+
+val t = Terminal()
+
+private val dateFmt = SimpleDateFormat("yyyy-MM-dd HH:mm")
+
+fun Long.fmtDate(): String = dateFmt.format(Date(this))
+
+fun printIssueShort(issue: Issue) {
+    val id = cyan(issue.idReadable.ifBlank { issue.id })
+    val state = issue.customFields.firstOrNull { it.name == "State" }
+        ?.value?.let {
+            try { it.toString().trim('"') } catch (_: Exception) { "" }
+        } ?: ""
+    val priority = issue.customFields.firstOrNull { it.name == "Priority" }
+        ?.value?.let {
+            try { it.toString().trim('"') } catch (_: Exception) { "" }
+        } ?: ""
+    val stateTag = if (state.isNotBlank()) " [${yellow(state)}]" else ""
+    val priorityTag = if (priority.isNotBlank()) " (${green(priority)})" else ""
+    t.println("  $id$stateTag$priorityTag  ${bold(issue.summary)}")
+}
+
+fun printIssueFull(issue: Issue) {
+    t.println()
+    t.println(bold("─".repeat(70)))
+    t.println("${bold("ID:")}          ${cyan(issue.idReadable.ifBlank { issue.id })}")
+    t.println("${bold("Summary:")}     ${bold(issue.summary)}")
+    t.println("${bold("Project:")}     ${issue.project?.name ?: "—"} (${issue.project?.shortName ?: ""})")
+    t.println("${bold("Reporter:")}    ${issue.reporter?.fullName ?: issue.reporter?.login ?: "—"}")
+
+    val assignee = issue.customFields.firstOrNull { it.name == "Assignee" }
+        ?.value?.toString()?.trim('"') ?: "—"
+    t.println("${bold("Assignee:")}    $assignee")
+
+    val state = issue.customFields.firstOrNull { it.name == "State" }
+        ?.value?.toString()?.trim('"') ?: "—"
+    t.println("${bold("State:")}       ${yellow(state)}")
+
+    val priority = issue.customFields.firstOrNull { it.name == "Priority" }
+        ?.value?.toString()?.trim('"') ?: "—"
+    t.println("${bold("Priority:")}    ${green(priority)}")
+
+    val type = issue.customFields.firstOrNull { it.name == "Type" }
+        ?.value?.toString()?.trim('"') ?: "—"
+    t.println("${bold("Type:")}        $type")
+
+    if (!issue.tags.isNullOrEmpty()) {
+        t.println("${bold("Tags:")}        ${issue.tags.joinToString(", ") { it.name }}")
+    }
+    if (issue.created != null) t.println("${bold("Created:")}     ${issue.created.fmtDate()}")
+    if (issue.updated != null) t.println("${bold("Updated:")}     ${issue.updated.fmtDate()}")
+    if (issue.resolved != null) t.println("${bold("Resolved:")}    ${issue.resolved.fmtDate()}")
+    if (!issue.description.isNullOrBlank()) {
+        t.println()
+        t.println(bold("Description:"))
+        t.println(issue.description)
+    }
+    if (!issue.comments.isNullOrEmpty()) {
+        t.println()
+        t.println(bold("Comments (${issue.comments.size}):"))
+        for (c in issue.comments) {
+            val who = c.author?.fullName ?: c.author?.login ?: "?"
+            val when_ = c.created?.fmtDate() ?: ""
+            t.println("  ${cyan(who)} at $when_:")
+            c.text?.lines()?.forEach { t.println("    $it") }
+        }
+    }
+    t.println(bold("─".repeat(70)))
+}
+
+fun printBoardShort(board: AgileBoard) {
+    t.println("  ${cyan(board.id)}  ${bold(board.name)}")
+}
+
+fun printBoardFull(board: AgileBoard) {
+    t.println()
+    t.println(bold("─".repeat(70)))
+    t.println("${bold("Board:")}  ${bold(board.name)}  (${cyan(board.id)})")
+    if (!board.sprints.isNullOrEmpty()) {
+        t.println()
+        t.println(bold("Sprints:"))
+        for (s in board.sprints) {
+            val active = if (s.isDefault) green(" [active]") else ""
+            val archived = if (s.archived) red(" [archived]") else ""
+            val range = buildString {
+                if (s.start != null) append(" ${s.start.fmtDate()}")
+                if (s.finish != null) append(" → ${s.finish.fmtDate()}")
+            }
+            t.println("  ${cyan(s.id)}  ${bold(s.name)}$active$archived$range")
+            if (!s.goal.isNullOrBlank()) t.println("       Goal: ${s.goal}")
+        }
+    }
+    if (board.columnSettings?.columns != null) {
+        t.println()
+        t.println(bold("Columns:") + " " + board.columnSettings.columns.joinToString(", ") { it.presentation })
+    }
+    t.println(bold("─".repeat(70)))
+}
+
+fun printSprintFull(sprint: Sprint) {
+    t.println()
+    t.println(bold("─".repeat(70)))
+    val active = if (sprint.isDefault) green(" [active]") else ""
+    t.println("${bold("Sprint:")}  ${bold(sprint.name)}$active  (${cyan(sprint.id)})")
+    if (!sprint.goal.isNullOrBlank()) t.println("${bold("Goal:")}    ${sprint.goal}")
+    if (sprint.start != null) t.println("${bold("Start:")}   ${sprint.start.fmtDate()}")
+    if (sprint.finish != null) t.println("${bold("End:")}     ${sprint.finish.fmtDate()}")
+    if (!sprint.issues.isNullOrEmpty()) {
+        t.println()
+        t.println(bold("Issues (${sprint.issues.size}):"))
+        sprint.issues.forEach { printIssueShort(it) }
+    } else {
+        t.println("  (no issues)")
+    }
+    t.println(bold("─".repeat(70)))
+}
+
+fun printActivity(item: ActivityItem) {
+    val who = item.author?.fullName ?: item.author?.login ?: "?"
+    val when_ = item.timestamp?.fmtDate() ?: ""
+    val target = item.target?.let { "${it.idReadable ?: it.id}: ${it.summary ?: ""}" } ?: ""
+    val category = item.category?.id?.removeSuffix("Category") ?: item.type.removePrefix("jetbrains.jetpad.model..")
+
+    val added = item.added?.let { " → ${it.toString().take(80)}" } ?: ""
+    val removed = item.removed?.let { " (was: ${it.toString().take(40)})" } ?: ""
+
+    t.println("  ${cyan(when_)}  ${bold(who)}  [${yellow(category)}]  $target$removed$added")
+}
+
+fun printProjectShort(p: com.youtrack.cli.model.Project) {
+    t.println("  ${cyan(p.shortName)}  ${bold(p.name)}  (id: ${p.id})")
+    if (!p.description.isNullOrBlank()) t.println("       ${p.description}")
+}

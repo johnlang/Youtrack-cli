@@ -1,1 +1,218 @@
-# Youtrack-cli
+# YouTrack CLI
+
+A fast, colorful command-line client for [JetBrains YouTrack](https://www.jetbrains.com/youtrack/) written in Kotlin.
+Manage issues, search, browse agile boards, and view activity streams — all without leaving your terminal.
+
+```
+yt issue list --project DEMO
+yt search "assignee: me #Unresolved Priority: Critical"
+yt board sprint 112-1 201-2
+yt activity user john.smith
+```
+
+---
+
+## Features
+
+| Area | Capabilities |
+|------|-------------|
+| **Issues** | Create, read, update, delete · Add comments · Apply YouTrack commands |
+| **Search** | Full YouTrack query language · Pagination · Verbose mode |
+| **Agile Boards** | List boards · View sprints with issues · Column layout |
+| **Activity** | Recent activity per user · Full history per issue |
+| **Projects** | List all accessible projects |
+| **Config** | Secure token storage · Default project · Masked display |
+
+---
+
+## Requirements
+
+- JDK 17 or newer
+- Gradle 8+ (wrapper included)
+- A YouTrack instance (cloud or self-hosted) with a permanent API token
+
+---
+
+## Installation
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/yourorg/youtrack-cli.git
+cd youtrack-cli
+```
+
+### 2. Build the fat JAR
+
+```bash
+./gradlew shadowJar
+```
+
+The self-contained JAR is produced at `build/libs/yt.jar`.
+
+### 3. Install the `yt` wrapper script
+
+**Linux / macOS:**
+```bash
+sudo cp scripts/yt /usr/local/bin/yt
+sudo chmod +x /usr/local/bin/yt
+```
+
+Or create it manually:
+```bash
+cat > /usr/local/bin/yt << 'EOF'
+#!/bin/sh
+exec java -jar /path/to/youtrack-cli/build/libs/yt.jar "$@"
+EOF
+chmod +x /usr/local/bin/yt
+```
+
+**Windows (PowerShell):**
+```powershell
+# Create yt.bat somewhere on your PATH
+@echo off
+java -jar C:\path\to\youtrack-cli\build\libs\yt.jar %*
+```
+
+### 4. Configure credentials
+
+Get your API token from YouTrack → **Profile → Account Security → Tokens → New token**.
+
+```bash
+yt config set --url https://company.youtrack.cloud --token perm:xxxxxxxx --project MYPROJ
+```
+
+### Verify
+
+```bash
+yt project list
+```
+
+---
+
+## Quick Start
+
+```bash
+# 1. Configure
+yt config set --url https://acme.youtrack.cloud --token perm:abc123 --project DEMO
+
+# 2. List issues in default project
+yt issue list
+
+# 3. View a specific issue
+yt issue get DEMO-42
+
+# 4. Create an issue
+yt issue create --summary "Login broken after update" --description "Returns 500 on /login"
+
+# 5. Update an issue
+yt issue update DEMO-55 --summary "Login broken on iOS 17"
+
+# 6. Apply a command (state / priority / assignee)
+yt issue command DEMO-55 "Priority Critical State In Progress"
+
+# 7. Search
+yt search "assignee: me #Unresolved"
+
+# 8. Browse boards
+yt board list
+yt board sprint 112-1            # list sprints
+yt board sprint 112-1 201-2      # issues in sprint
+
+# 9. Activity
+yt activity user john.smith
+yt activity issue DEMO-42
+```
+
+---
+
+## Command Reference
+
+```
+yt
+├── config
+│   ├── set       --url --token [--project]
+│   ├── show
+│   └── clear
+├── project
+│   └── list
+├── issue
+│   ├── list      [--project] [--top] [--skip]
+│   ├── get       <ISSUE_ID>
+│   ├── create    --summary [--project] [--description]
+│   ├── update    <ISSUE_ID> [--summary] [--description]
+│   ├── delete    <ISSUE_ID> [--yes]
+│   ├── comment   <ISSUE_ID> --text
+│   └── command   <ISSUE_ID> <COMMAND>
+├── search        <QUERY> [--top] [--skip] [--verbose]
+├── board
+│   ├── list
+│   ├── get       <BOARD_ID>
+│   └── sprint    <BOARD_ID> [SPRINT_ID]
+└── activity
+    ├── user      <LOGIN> [--top]
+    └── issue     <ISSUE_ID> [--top]
+```
+
+Every command supports `--help` for detailed usage.
+
+---
+
+## Full Documentation
+
+See **[DOCS.md](DOCS.md)** for:
+- All commands with options and output examples
+- YouTrack query language reference
+- Pagination guide
+- Exit codes
+
+---
+
+## Development
+
+```bash
+# Run directly with Gradle
+./gradlew run --args="issue list --project DEMO"
+
+# Run tests
+./gradlew test
+
+# Build fat JAR
+./gradlew shadowJar
+```
+
+### Project layout
+
+```
+src/main/kotlin/com/youtrack/cli/
+├── cli.kt                     Entry point & root command
+├── config/
+│   └── Config.kt              Config model + file persistence
+├── client/
+│   ├── YouTrackClient.kt      REST API client (OkHttp)
+│   └── Printer.kt             Terminal output helpers (Mordant)
+├── model/
+│   └── Models.kt              Serializable data models
+└── commands/
+    ├── ConfigCommand.kt       yt config *
+    ├── IssueCommands.kt       yt issue *
+    ├── SearchCommand.kt       yt search
+    ├── BoardCommands.kt       yt board *
+    ├── ActivityCommands.kt    yt activity *
+    └── ProjectCommands.kt     yt project *
+```
+
+### Dependencies
+
+| Library | Purpose |
+|---------|---------|
+| [Clikt](https://github.com/ajalt/clikt) | CLI argument parsing |
+| [OkHttp](https://square.github.io/okhttp/) | HTTP client |
+| [kotlinx.serialization](https://github.com/Kotlin/kotlinx.serialization) | JSON parsing |
+| [Mordant](https://github.com/ajalt/mordant) | Colorful terminal output |
+
+---
+
+## License
+
+[MIT](LICENSE)
