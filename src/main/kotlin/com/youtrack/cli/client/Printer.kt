@@ -139,3 +139,91 @@ fun printProjectShort(p: com.youtrack.cli.model.Project) {
     t.println("  ${cyan(p.shortName)}  ${bold(p.name)}  (id: ${p.id})")
     if (!p.description.isNullOrBlank()) t.println("       ${p.description}")
 }
+
+fun printIssueLinks(issueId: String, links: List<com.youtrack.cli.model.IssueLink>) {
+    t.println()
+    t.println(bold("Links for $issueId:"))
+    for (link in links) {
+        if (link.issues.isEmpty()) continue
+        val lt = link.linkType
+        val label = when (link.direction) {
+            "OUTWARD" -> lt?.sourceToTarget ?: lt?.name ?: "linked"
+            "INWARD"  -> lt?.targetToSource ?: lt?.name ?: "linked"
+            else      -> lt?.name ?: "linked"
+        }
+        t.println("  ${yellow(label)}:")
+        for (issue in link.issues) {
+            val resolved = if (issue.resolved != null) red(" [resolved]") else ""
+            t.println("    ${cyan(issue.idReadable.ifBlank { issue.id })}$resolved  ${issue.summary}")
+        }
+    }
+}
+
+fun printLinkType(lt: com.youtrack.cli.model.IssueLinkType) {
+    val direction = if (lt.directed) {
+        "${yellow(lt.sourceToTarget)} / ${yellow(lt.targetToSource)}"
+    } else {
+        yellow(lt.name)
+    }
+    t.println("  ${bold(lt.name)}  ($direction)")
+}
+
+fun printWorkItem(item: com.youtrack.cli.model.WorkItem) {
+    val who = item.author?.fullName ?: item.author?.login ?: "?"
+    val when_ = item.date?.fmtDate() ?: ""
+    val dur = item.duration?.presentation ?: "?"
+    val desc = if (!item.text.isNullOrBlank()) "  — ${item.text}" else ""
+    t.println("  ${cyan(item.id)}  ${bold(dur)}  $who  $when_$desc")
+}
+
+fun printUserShort(u: com.youtrack.cli.model.User) {
+    val email = if (!u.email.isNullOrBlank()) "  <${u.email}>" else ""
+    t.println("  ${cyan(u.login)}  ${bold(u.fullName ?: u.login)}$email")
+}
+
+fun printUserFull(u: com.youtrack.cli.model.User) {
+    t.println()
+    t.println(bold("─".repeat(50)))
+    t.println("${bold("Login:")}     ${cyan(u.login)}")
+    t.println("${bold("Name:")}      ${u.fullName ?: "—"}")
+    t.println("${bold("Email:")}     ${u.email ?: "—"}")
+    t.println("${bold("ID:")}        ${u.id}")
+    if (!u.groups.isNullOrEmpty()) {
+        t.println("${bold("Groups:")}    ${u.groups.joinToString(", ") { it.name }}")
+    }
+    t.println(bold("─".repeat(50)))
+}
+
+fun printArticleShort(a: com.youtrack.cli.model.Article) {
+    val id = cyan(a.idReadable.ifBlank { a.id })
+    val proj = a.project?.shortName?.let { " [$it]" } ?: ""
+    t.println("  $id$proj  ${bold(a.summary)}")
+}
+
+fun printArticleFull(a: com.youtrack.cli.model.Article) {
+    t.println()
+    t.println(bold("─".repeat(70)))
+    t.println("${bold("ID:")}          ${cyan(a.idReadable.ifBlank { a.id })}")
+    t.println("${bold("Title:")}       ${bold(a.summary)}")
+    t.println("${bold("Project:")}     ${a.project?.name ?: "—"} (${a.project?.shortName ?: ""})")
+    t.println("${bold("Author:")}      ${a.author?.fullName ?: a.author?.login ?: "—"}")
+    if (a.parentArticle != null) {
+        t.println("${bold("Parent:")}      ${cyan(a.parentArticle.idReadable.ifBlank { a.parentArticle.id })}  ${a.parentArticle.summary}")
+    }
+    if (!a.tags.isNullOrEmpty()) {
+        t.println("${bold("Tags:")}        ${a.tags.joinToString(", ") { it.name }}")
+    }
+    if (a.created != null) t.println("${bold("Created:")}     ${a.created.fmtDate()}")
+    if (a.updated != null) t.println("${bold("Updated:")}     ${a.updated.fmtDate()}")
+    if (!a.childArticles.isNullOrEmpty()) {
+        t.println()
+        t.println(bold("Sub-articles (${a.childArticles.size}):"))
+        a.childArticles.forEach { t.println("  ${cyan(it.idReadable.ifBlank { it.id })}  ${it.summary}") }
+    }
+    if (!a.content.isNullOrBlank()) {
+        t.println()
+        t.println(bold("Content:"))
+        t.println(a.content)
+    }
+    t.println(bold("─".repeat(70)))
+}

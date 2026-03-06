@@ -9,18 +9,23 @@ import com.github.ajalt.mordant.rendering.TextColors.*
 import com.github.ajalt.mordant.rendering.TextStyles.*
 import com.youtrack.cli.client.YouTrackClient
 import com.youtrack.cli.client.printIssueFull
+import com.youtrack.cli.client.printIssueLinks
 import com.youtrack.cli.client.printIssueShort
+import com.youtrack.cli.client.printLinkType
+import com.youtrack.cli.client.printWorkItem
 import com.youtrack.cli.client.t
 import com.youtrack.cli.config.ConfigManager
 
 class IssueCommand : CliktCommand(
     name = "issue",
-    help = "Manage YouTrack issues (CRUD + comments + commands)"
+    help = "Manage YouTrack issues (CRUD + comments + commands + links + work items)"
 ) {
     init {
         subcommands(
             IssueList(), IssueGet(), IssueCreate(), IssueUpdate(),
-            IssueDelete(), IssueComment(), IssueApplyCommand()
+            IssueDelete(), IssueComment(), IssueApplyCommand(),
+            IssueLinks(), IssueLinkAdd(), IssueLinkTypes(),
+            WorkItemCommand()
         )
     }
 
@@ -123,6 +128,98 @@ class IssueApplyCommand : CliktCommand(
     override fun run() = withClient { client ->
         client.applyCommand(issueId, command)
         t.println(green("✓ Command '$command' applied to $issueId"))
+    }
+}
+
+// ── Issue Links ───────────────────────────────────────────────────────────────
+
+class IssueLinks : CliktCommand(name = "links", help = "List all links for an issue") {
+    private val issueId by argument("ISSUE_ID", help = "Issue ID (e.g. PROJ-42)")
+
+    override fun run() = withClient { client ->
+        val links = client.getIssueLinks(issueId)
+        if (links.isEmpty()) { t.println(yellow("No links found for $issueId.")); return@withClient }
+        printIssueLinks(issueId, links)
+    }
+}
+
+class IssueLinkAdd : CliktCommand(
+    name = "link",
+    help = "Link an issue to another issue.\n\n" +
+        "LINK_COMMAND is a YouTrack command string combining the relation and target,\n" +
+        "e.g. \"relates to DEMO-2\", \"subtask of BACK-1\", \"duplicates MOB-5\".\n" +
+        "Run 'yt issue linktypes' to see available relation names."
+) {
+    private val issueId by argument("ISSUE_ID", help = "Source issue ID")
+    private val linkCommand by argument("LINK_COMMAND", help = "Link command, e.g. \"relates to DEMO-2\"")
+
+    override fun run() = withClient { client ->
+        client.linkIssue(issueId, linkCommand)
+        t.println(green("✓ Link applied to $issueId: $linkCommand"))
+    }
+}
+
+class IssueLinkTypes : CliktCommand(name = "linktypes", help = "List available issue link types") {
+    override fun run() = withClient { client ->
+        val types = client.getLinkTypes()
+        if (types.isEmpty()) { t.println(yellow("No link types found.")); return@withClient }
+        t.println(bold("Issue Link Types (${types.size}):"))
+        types.forEach { printLinkType(it) }
+    }
+}
+
+// ── Work Items ────────────────────────────────────────────────────────────────
+
+class WorkItemCommand : CliktCommand(
+    name = "workitem",
+    help = "Manage work items (time tracking) on an issue"
+) {
+    init { subcommands(WorkItemList(), WorkItemAdd(), WorkItemDelete()) }
+    override fun run() = Unit
+}
+
+class WorkItemList : CliktCommand(name = "list", help = "List work items logged on an issue") {
+    private val issueId by argument("ISSUE_ID", help = "Issue ID")
+    private val top by option("--top", "-n", help = "Max results (default 50)").int().default(50)
+
+    override fun run() = withClient { client ->
+        val items = client.listWorkItems(issueId, top)
+        if (items.isEmpty()) { t.println(yellow("No work items logged on $issueId.")); return@withClient }
+        t.println(bold("Work items for $issueId (${items.size}):"))
+        items.forEach { printWorkItem(it) }
+    }
+}
+
+class WorkItemAdd : CliktCommand(name = "add", help = "Log a work item (time entry) on an issue") {
+    private val issueId by argument("ISSUE_ID", help = "Issue ID")
+    private val duration by option("--duration", "-d", help = "Duration, e.g. 1h30m, 2h, 45m").required()
+    private val description by option("--description", "--desc", help = "Optional work description")
+    private val date by option("--date", help = "Date as YYYY-MM-DD (defaults to today)")
+
+    override fun run() = withClient { client ->
+        val dateMs: Long? = date?.let {
+            java.text.SimpleDateFormat("yyyy-MM-dd").parse(it)?.time
+        }
+        val item = client.addWorkItem(issueId, duration, description, dateMs)
+        t.println(green("✓ Work item logged on $issueId (id: ${item.id}): ${item.duration?.presentation ?: duration}"))
+    }
+}
+
+class WorkItemDelete : CliktCommand(name = "delete", help = "Delete a work item from an issue") {
+    private val issueId by argument("ISSUE_ID", help = "Issue ID")
+    private val workItemId by argument("WORK_ITEM_ID", help = "Work item ID")
+    private val yes by option("--yes", "-y", help = "Skip confirmation prompt").flag()
+
+    override fun run() {
+        if (!yes) {
+            print("Delete work item $workItemId from $issueId? [y/N] ")
+            val answer = readLine()?.trim()?.lowercase()
+            if (answer != "y" && answer != "yes") { t.println(yellow("Cancelled.")); return }
+        }
+        withClient { client ->
+            client.deleteWorkItem(issueId, workItemId)
+            t.println(green("✓ Deleted work item $workItemId from $issueId"))
+        }
     }
 }
 
