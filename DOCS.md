@@ -9,7 +9,8 @@ The binary is invoked as `yt`.
 
 1. [Configuration](#configuration)
 2. [Projects](#projects)
-3. [Issues (CRUD)](#issues-crud)
+3. [Browse](#browse)
+4. [Issues (CRUD)](#issues-crud)
    - [List issues](#list-issues)
    - [Get issue](#get-issue)
    - [Create issue](#create-issue)
@@ -17,16 +18,16 @@ The binary is invoked as `yt`.
    - [Delete issue](#delete-issue)
    - [Add comment](#add-comment)
    - [Apply command](#apply-command)
-4. [Search](#search)
-5. [Agile Boards](#agile-boards)
+5. [Search](#search)
+6. [Agile Boards](#agile-boards)
    - [List boards](#list-boards)
    - [Get board](#get-board)
    - [View sprint](#view-sprint)
-6. [Activity](#activity)
+7. [Activity](#activity)
    - [User activity](#user-activity)
    - [Issue activity](#issue-activity)
-7. [Exit Codes](#exit-codes)
-8. [YouTrack Query Language](#youtrack-query-language)
+8. [Exit Codes](#exit-codes)
+9. [YouTrack Query Language](#youtrack-query-language)
 
 ---
 
@@ -104,6 +105,30 @@ Projects (3):
 ```
 
 The `shortName` (first column) is used as the project identifier in all other commands.
+
+---
+
+## Browse
+
+Open an issue directly in the browser. The URL is constructed from the configured base URL.
+
+```
+yt browse <ISSUE_ID>
+yt b <ISSUE_ID>
+```
+
+**Examples:**
+```bash
+yt b DEMO-1
+yt browse BACK-42
+```
+
+**Output:**
+```
+Opening https://acme.youtrack.cloud/issue/DEMO-1
+```
+
+The command opens the URL using the system default browser (`xdg-open` on Linux, `open` on macOS, `start` on Windows) and exits immediately.
 
 ---
 
