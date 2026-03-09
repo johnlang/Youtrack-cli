@@ -21,7 +21,7 @@ object ConfigManager {
         if (!configFile.exists()) return Config()
         return try {
             json.decodeFromString<Config>(configFile.readText())
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             Config()
         }
     }

@@ -1,6 +1,7 @@
 package com.youtrack.cli.commands
 
 import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.ProgramResult
 import com.github.ajalt.clikt.core.subcommands
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.*
@@ -229,12 +230,9 @@ internal fun withClient(block: (YouTrackClient) -> Unit) {
     try {
         val cfg = ConfigManager.requireValid()
         block(YouTrackClient(cfg))
-    } catch (e: IllegalStateException) {
-        t.println(com.github.ajalt.mordant.rendering.TextColors.red("Error: ${e.message}"))
-        throw com.github.ajalt.clikt.core.ProgramResult(1)
     } catch (e: Exception) {
-        t.println(com.github.ajalt.mordant.rendering.TextColors.red("Error: ${e.message}"))
-        throw com.github.ajalt.clikt.core.ProgramResult(1)
+        t.println(red("Error: ${e.message}"))
+        throw ProgramResult(1)
     }
 }
 

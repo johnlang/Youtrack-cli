@@ -55,7 +55,7 @@ class BoardSprint : CliktCommand(
                 t.println("  ${cyan(s.id)}  ${bold(s.name)}$active$archived")
             }
         } else {
-            val sprint = client.getBoardSprint(boardId, sprintId!!)
+            val sprint = client.getBoardSprint(boardId, sprintId ?: return@withClient)
             printSprintFull(sprint)
         }
     }

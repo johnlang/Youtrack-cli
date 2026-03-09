@@ -138,12 +138,12 @@ fun printActivity(item: ActivityItem) {
     t.println("  ${cyan(when_)}  ${bold(who)}  [${yellow(category)}]  $target$removed$added")
 }
 
-fun printProjectShort(p: com.youtrack.cli.model.Project) {
+fun printProjectShort(p: Project) {
     t.println("  ${cyan(p.shortName)}  ${bold(p.name)}  (id: ${p.id})")
     if (!p.description.isNullOrBlank()) t.println("       ${p.description}")
 }
 
-fun printIssueLinks(issueId: String, links: List<com.youtrack.cli.model.IssueLink>) {
+fun printIssueLinks(issueId: String, links: List<IssueLink>) {
     t.println()
     t.println(bold("Links for $issueId:"))
     for (link in links) {
@@ -162,7 +162,7 @@ fun printIssueLinks(issueId: String, links: List<com.youtrack.cli.model.IssueLin
     }
 }
 
-fun printLinkType(lt: com.youtrack.cli.model.IssueLinkType) {
+fun printLinkType(lt: IssueLinkType) {
     val direction = if (lt.directed) {
         "${yellow(lt.sourceToTarget)} / ${yellow(lt.targetToSource)}"
     } else {
@@ -171,7 +171,7 @@ fun printLinkType(lt: com.youtrack.cli.model.IssueLinkType) {
     t.println("  ${bold(lt.name)}  ($direction)")
 }
 
-fun printWorkItem(item: com.youtrack.cli.model.WorkItem) {
+fun printWorkItem(item: WorkItem) {
     val who = item.author?.fullName ?: item.author?.login ?: "?"
     val when_ = item.date?.fmtDate() ?: ""
     val dur = item.duration?.presentation ?: "?"
@@ -179,12 +179,12 @@ fun printWorkItem(item: com.youtrack.cli.model.WorkItem) {
     t.println("  ${cyan(item.id)}  ${bold(dur)}  $who  $when_$desc")
 }
 
-fun printUserShort(u: com.youtrack.cli.model.User) {
+fun printUserShort(u: User) {
     val email = if (!u.email.isNullOrBlank()) "  <${u.email}>" else ""
     t.println("  ${cyan(u.login)}  ${bold(u.fullName ?: u.login)}$email")
 }
 
-fun printUserFull(u: com.youtrack.cli.model.User) {
+fun printUserFull(u: User) {
     t.println()
     t.println(bold("─".repeat(50)))
     t.println("${bold("Login:")}     ${cyan(u.login)}")
@@ -197,13 +197,13 @@ fun printUserFull(u: com.youtrack.cli.model.User) {
     t.println(bold("─".repeat(50)))
 }
 
-fun printArticleShort(a: com.youtrack.cli.model.Article) {
+fun printArticleShort(a: Article) {
     val id = cyan(a.idReadable.ifBlank { a.id })
     val proj = a.project?.shortName?.let { " [$it]" } ?: ""
     t.println("  $id$proj  ${bold(a.summary)}")
 }
 
-fun printArticleFull(a: com.youtrack.cli.model.Article) {
+fun printArticleFull(a: Article) {
     t.println()
     t.println(bold("─".repeat(70)))
     t.println("${bold("ID:")}          ${cyan(a.idReadable.ifBlank { a.id })}")

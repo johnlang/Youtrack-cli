@@ -66,27 +66,6 @@ data class Tag(
     val name: String = ""
 )
 
-// ── Create / Update payloads ─────────────────────────────────────────────────
-
-@Serializable
-data class IssueCreate(
-    val summary: String,
-    val description: String? = null,
-    val project: ProjectIdRef
-)
-
-@Serializable
-data class ProjectIdRef(val id: String)
-
-@Serializable
-data class IssueUpdate(
-    val summary: String? = null,
-    val description: String? = null
-)
-
-@Serializable
-data class CommentCreate(val text: String)
-
 // ── Agile Boards ─────────────────────────────────────────────────────────────
 
 @Serializable

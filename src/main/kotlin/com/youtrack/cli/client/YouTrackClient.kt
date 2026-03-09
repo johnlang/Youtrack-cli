@@ -2,7 +2,7 @@ package com.youtrack.cli.client
 
 import com.youtrack.cli.config.Config
 import com.youtrack.cli.model.*
-import kotlinx.serialization.encodeToString
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -13,6 +13,7 @@ import java.util.concurrent.TimeUnit
 
 class YouTrackClient(private val config: Config) {
 
+    @OptIn(ExperimentalSerializationApi::class)
     private val json = Json {
         ignoreUnknownKeys = true
         explicitNulls = false
@@ -46,13 +47,6 @@ class YouTrackClient(private val config: Config) {
                 .build()
         ).execute()
 
-    private fun patch(path: String, body: String): Response =
-        http.newCall(
-            Request.Builder().url("$base$path")
-                .patch(body.toRequestBody("application/json".toMediaType()))
-                .build()
-        ).execute()
-
     private fun delete(path: String): Response =
         http.newCall(Request.Builder().url("$base$path").delete().build()).execute()
 
@@ -63,7 +57,9 @@ class YouTrackClient(private val config: Config) {
                 json.parseToJsonElement(body).jsonObject["error_description"]?.jsonPrimitive?.content
                     ?: json.parseToJsonElement(body).jsonObject["error"]?.jsonPrimitive?.content
                     ?: "HTTP $code"
-            } catch (_: Exception) { "HTTP $code: $body" }
+            } catch (_: Exception) {
+                "HTTP $code: $body"
+            }
             error(msg)
         }
         return body
@@ -72,8 +68,8 @@ class YouTrackClient(private val config: Config) {
     // ── Issues ────────────────────────────────────────────────────────────────
 
     private val issueFields = "id,idReadable,summary,description,created,updated,resolved," +
-        "project(id,name,shortName),reporter(id,login,fullName)," +
-        "customFields(name,value(name)),tags(id,name)"
+            "project(id,name,shortName),reporter(id,login,fullName)," +
+            "customFields(name,value(name)),tags(id,name)"
 
     fun listIssues(projectId: String, top: Int = 20, skip: Int = 0): List<Issue> {
         val raw = get("/api/issues?fields=$issueFields&query=project:$projectId&\$top=$top&\$skip=$skip")
@@ -157,8 +153,8 @@ class YouTrackClient(private val config: Config) {
     fun getBoard(boardId: String): AgileBoard {
         val raw = get(
             "/api/agiles/$boardId?fields=id,name," +
-                "sprints(id,name,goal,start,finish,archived,isDefault)," +
-                "columnSettings(columns(id,presentation))"
+                    "sprints(id,name,goal,start,finish,archived,isDefault)," +
+                    "columnSettings(columns(id,presentation))"
         ).requireSuccess()
         return json.decodeFromString(raw)
     }
@@ -166,7 +162,7 @@ class YouTrackClient(private val config: Config) {
     fun getBoardSprint(boardId: String, sprintId: String): Sprint {
         val raw = get(
             "/api/agiles/$boardId/sprints/$sprintId?fields=id,name,goal,start,finish,archived,isDefault," +
-                "issues($issueFields)&\$top=100"
+                    "issues($issueFields)&\$top=100"
         ).requireSuccess()
         return json.decodeFromString(raw)
     }
@@ -177,21 +173,29 @@ class YouTrackClient(private val config: Config) {
         val encoded = java.net.URLEncoder.encode("author: $login", "UTF-8")
         val raw = get(
             "/api/activities?fields=id,timestamp,author(id,login,fullName)," +
-                "target(id,idReadable,summary),category(id),\$type,added,removed" +
-                "&query=$encoded&\$top=$top&categories=CommentsCategory,CustomFieldCategory," +
-                "IssueCreatedCategory,IssueResolvedCategory,LinksCategory,AttachmentCategory"
+                    "target(id,idReadable,summary),category(id),\$type,added,removed" +
+                    "&query=$encoded&\$top=$top&categories=CommentsCategory,CustomFieldCategory," +
+                    "IssueCreatedCategory,IssueResolvedCategory,LinksCategory,AttachmentCategory"
         ).requireSuccess()
-        return try { json.decodeFromString(raw) } catch (_: Exception) { emptyList() }
+        return try {
+            json.decodeFromString(raw)
+        } catch (_: Exception) {
+            emptyList()
+        }
     }
 
     fun getIssueActivity(issueId: String, top: Int = 50): List<ActivityItem> {
         val raw = get(
             "/api/issues/$issueId/activities?fields=id,timestamp,author(id,login,fullName)," +
-                "target(id,idReadable,summary),category(id),\$type,added,removed&\$top=$top" +
-                "&categories=CommentsCategory,CustomFieldCategory," +
-                "IssueCreatedCategory,IssueResolvedCategory,LinksCategory,AttachmentCategory"
+                    "target(id,idReadable,summary),category(id),\$type,added,removed&\$top=$top" +
+                    "&categories=CommentsCategory,CustomFieldCategory," +
+                    "IssueCreatedCategory,IssueResolvedCategory,LinksCategory,AttachmentCategory"
         ).requireSuccess()
-        return try { json.decodeFromString(raw) } catch (_: Exception) { emptyList() }
+        return try {
+            json.decodeFromString(raw)
+        } catch (_: Exception) {
+            emptyList()
+        }
     }
 
     // ── Issue Links ───────────────────────────────────────────────────────────
@@ -199,20 +203,28 @@ class YouTrackClient(private val config: Config) {
     fun getIssueLinks(issueId: String): List<IssueLink> {
         val raw = get(
             "/api/issues/$issueId/links?fields=id,direction," +
-                "linkType(id,name,directed,sourceToTarget,targetToSource)," +
-                "issues(id,idReadable,summary,resolved)"
+                    "linkType(id,name,directed,sourceToTarget,targetToSource)," +
+                    "issues(id,idReadable,summary,resolved)"
         ).requireSuccess()
-        return try { json.decodeFromString(raw) } catch (_: Exception) { emptyList() }
+        return try {
+            json.decodeFromString(raw)
+        } catch (_: Exception) {
+            emptyList()
+        }
     }
 
     fun getLinkTypes(): List<IssueLinkType> {
         val raw = get(
             "/api/issueLinkTypes?fields=id,name,directed,sourceToTarget,targetToSource&\$top=100"
         ).requireSuccess()
-        return try { json.decodeFromString(raw) } catch (_: Exception) { emptyList() }
+        return try {
+            json.decodeFromString(raw)
+        } catch (_: Exception) {
+            emptyList()
+        }
     }
 
-    /** Link [issueId] to [targetId] using a command string, e.g. "relates to DEMO-2". */
+    /** Link [issueId] to another issue using [linkCommand], e.g. "relates to DEMO-2". */
     fun linkIssue(issueId: String, linkCommand: String) = applyCommand(issueId, linkCommand)
 
     // ── Work Items ────────────────────────────────────────────────────────────
@@ -220,9 +232,13 @@ class YouTrackClient(private val config: Config) {
     fun listWorkItems(issueId: String, top: Int = 50): List<WorkItem> {
         val raw = get(
             "/api/issues/$issueId/timeTracking/workItems?" +
-                "fields=id,date,duration(minutes,presentation),text,author(id,login,fullName)&\$top=$top"
+                    "fields=id,date,duration(minutes,presentation),text,author(id,login,fullName)&\$top=$top"
         ).requireSuccess()
-        return try { json.decodeFromString(raw) } catch (_: Exception) { emptyList() }
+        return try {
+            json.decodeFromString(raw)
+        } catch (_: Exception) {
+            emptyList()
+        }
     }
 
     fun addWorkItem(issueId: String, duration: String, description: String?, date: Long?): WorkItem {
@@ -233,7 +249,7 @@ class YouTrackClient(private val config: Config) {
         }
         val raw = post(
             "/api/issues/$issueId/timeTracking/workItems?" +
-                "fields=id,date,duration(minutes,presentation),text,author(id,login,fullName)",
+                    "fields=id,date,duration(minutes,presentation),text,author(id,login,fullName)",
             payload.toString()
         ).requireSuccess()
         return json.decodeFromString(raw)
@@ -249,7 +265,11 @@ class YouTrackClient(private val config: Config) {
         val raw = get(
             "/api/users?fields=id,login,fullName,email&\$top=$top"
         ).requireSuccess()
-        return try { json.decodeFromString(raw) } catch (_: Exception) { emptyList() }
+        return try {
+            json.decodeFromString(raw)
+        } catch (_: Exception) {
+            emptyList()
+        }
     }
 
     fun getUser(loginOrId: String): User {
@@ -269,8 +289,8 @@ class YouTrackClient(private val config: Config) {
     // ── Articles ──────────────────────────────────────────────────────────────
 
     private val articleFields = "id,idReadable,summary,content,created,updated," +
-        "project(id,name,shortName),author(id,login,fullName),tags(id,name)," +
-        "parentArticle(id,idReadable,summary)"
+            "project(id,name,shortName),author(id,login,fullName),tags(id,name)," +
+            "parentArticle(id,idReadable,summary)"
 
     fun listArticles(projectId: String? = null, top: Int = 25, skip: Int = 0): List<Article> {
         val query = if (projectId != null) {
@@ -278,7 +298,11 @@ class YouTrackClient(private val config: Config) {
         } else ""
         val raw = get("/api/articles?fields=$articleFields&\$top=$top&\$skip=$skip$query")
             .requireSuccess()
-        return try { json.decodeFromString(raw) } catch (_: Exception) { emptyList() }
+        return try {
+            json.decodeFromString(raw)
+        } catch (_: Exception) {
+            emptyList()
+        }
     }
 
     fun getArticle(articleId: String): Article {
@@ -317,6 +341,10 @@ class YouTrackClient(private val config: Config) {
         val raw = get(
             "/api/tags?fields=id,name&\$top=$top"
         ).requireSuccess()
-        return try { json.decodeFromString(raw) } catch (_: Exception) { emptyList() }
+        return try {
+            json.decodeFromString(raw)
+        } catch (_: Exception) {
+            emptyList()
+        }
     }
 }
