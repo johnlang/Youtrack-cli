@@ -102,7 +102,7 @@ class YouTrackClient(private val config: Config) {
             if (summary != null) put("summary", summary)
             if (description != null) put("description", description)
         }
-        val raw = patch("/api/issues/$issueId?fields=$issueFields", payload.toString()).requireSuccess()
+        val raw = post("/api/issues/$issueId?fields=$issueFields", payload.toString()).requireSuccess()
         return json.decodeFromString(raw)
     }
 
@@ -120,9 +120,12 @@ class YouTrackClient(private val config: Config) {
     }
 
     fun applyCommand(issueId: String, command: String) {
+        // Commands API requires the internal database ID (e.g. "2-32"), not the readable ID ("DEMO-32").
+        // If the ID looks like a readable ID (contains non-numeric characters before the dash), resolve it.
+        val dbId = if (issueId.matches(Regex("\\d+-\\d+"))) issueId else getIssue(issueId).id
         val payload = buildJsonObject {
             put("query", command)
-            put("issues", buildJsonArray { add(buildJsonObject { put("id", issueId) }) })
+            put("issues", buildJsonArray { add(buildJsonObject { put("id", dbId) }) })
         }
         post("/api/commands", payload.toString()).requireSuccess()
     }
@@ -184,7 +187,9 @@ class YouTrackClient(private val config: Config) {
     fun getIssueActivity(issueId: String, top: Int = 50): List<ActivityItem> {
         val raw = get(
             "/api/issues/$issueId/activities?fields=id,timestamp,author(id,login,fullName)," +
-                "target(id,idReadable,summary),category(id),\$type,added,removed&\$top=$top"
+                "target(id,idReadable,summary),category(id),\$type,added,removed&\$top=$top" +
+                "&categories=CommentsCategory,CustomFieldCategory," +
+                "IssueCreatedCategory,IssueResolvedCategory,LinksCategory,AttachmentCategory"
         ).requireSuccess()
         return try { json.decodeFromString(raw) } catch (_: Exception) { emptyList() }
     }
@@ -298,7 +303,7 @@ class YouTrackClient(private val config: Config) {
             if (summary != null) put("summary", summary)
             if (content != null) put("content", content)
         }
-        val raw = patch("/api/articles/$articleId?fields=$articleFields", payload.toString()).requireSuccess()
+        val raw = post("/api/articles/$articleId?fields=$articleFields", payload.toString()).requireSuccess()
         return json.decodeFromString(raw)
     }
 

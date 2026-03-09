@@ -18,6 +18,7 @@ class YouTrackCli : CliktCommand(
     invokeWithoutSubcommand = true,
     printHelpOnEmptyArgs = true
 ) {
+    override fun aliases() = mapOf("b" to listOf("browse"))
     override fun run() = Unit
 }
 

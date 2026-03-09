@@ -4,6 +4,7 @@ import com.github.ajalt.mordant.rendering.TextColors.*
 import com.github.ajalt.mordant.rendering.TextStyles.*
 import com.github.ajalt.mordant.terminal.Terminal
 import com.youtrack.cli.model.*
+import kotlinx.serialization.json.*
 import java.text.SimpleDateFormat
 import java.util.Date
 
@@ -13,16 +14,22 @@ private val dateFmt = SimpleDateFormat("yyyy-MM-dd HH:mm")
 
 fun Long.fmtDate(): String = dateFmt.format(Date(this))
 
+/** Extract a human-readable string from a custom-field value JsonElement.
+ *  Enum/state values come as {"name":"Submitted","$type":"..."} — return the name.
+ *  Plain string primitives are returned as-is.
+ *  Arrays (multi-value fields) are joined with ", ".
+ */
+private fun JsonElement?.displayValue(): String = when (this) {
+    null, JsonNull -> ""
+    is JsonPrimitive -> content
+    is JsonObject -> get("name")?.jsonPrimitive?.contentOrNull ?: toString()
+    is JsonArray -> joinToString(", ") { it.displayValue() }
+}
+
 fun printIssueShort(issue: Issue) {
     val id = cyan(issue.idReadable.ifBlank { issue.id })
-    val state = issue.customFields.firstOrNull { it.name == "State" }
-        ?.value?.let {
-            try { it.toString().trim('"') } catch (_: Exception) { "" }
-        } ?: ""
-    val priority = issue.customFields.firstOrNull { it.name == "Priority" }
-        ?.value?.let {
-            try { it.toString().trim('"') } catch (_: Exception) { "" }
-        } ?: ""
+    val state = issue.customFields.firstOrNull { it.name == "State" }?.value.displayValue()
+    val priority = issue.customFields.firstOrNull { it.name == "Priority" }?.value.displayValue()
     val stateTag = if (state.isNotBlank()) " [${yellow(state)}]" else ""
     val priorityTag = if (priority.isNotBlank()) " (${green(priority)})" else ""
     t.println("  $id$stateTag$priorityTag  ${bold(issue.summary)}")
@@ -36,20 +43,16 @@ fun printIssueFull(issue: Issue) {
     t.println("${bold("Project:")}     ${issue.project?.name ?: "—"} (${issue.project?.shortName ?: ""})")
     t.println("${bold("Reporter:")}    ${issue.reporter?.fullName ?: issue.reporter?.login ?: "—"}")
 
-    val assignee = issue.customFields.firstOrNull { it.name == "Assignee" }
-        ?.value?.toString()?.trim('"') ?: "—"
+    val assignee = issue.customFields.firstOrNull { it.name == "Assignee" }?.value.displayValue().ifBlank { "—" }
     t.println("${bold("Assignee:")}    $assignee")
 
-    val state = issue.customFields.firstOrNull { it.name == "State" }
-        ?.value?.toString()?.trim('"') ?: "—"
+    val state = issue.customFields.firstOrNull { it.name == "State" }?.value.displayValue().ifBlank { "—" }
     t.println("${bold("State:")}       ${yellow(state)}")
 
-    val priority = issue.customFields.firstOrNull { it.name == "Priority" }
-        ?.value?.toString()?.trim('"') ?: "—"
+    val priority = issue.customFields.firstOrNull { it.name == "Priority" }?.value.displayValue().ifBlank { "—" }
     t.println("${bold("Priority:")}    ${green(priority)}")
 
-    val type = issue.customFields.firstOrNull { it.name == "Type" }
-        ?.value?.toString()?.trim('"') ?: "—"
+    val type = issue.customFields.firstOrNull { it.name == "Type" }?.value.displayValue().ifBlank { "—" }
     t.println("${bold("Type:")}        $type")
 
     if (!issue.tags.isNullOrEmpty()) {

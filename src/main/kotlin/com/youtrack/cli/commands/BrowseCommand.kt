@@ -9,8 +9,7 @@ import java.net.URI
 
 class BrowseCommand : CliktCommand(
     name = "browse",
-    aliases = arrayOf("b"),
-    help = "Open an issue in the browser  (e.g. yt b DEMO-1)"
+    help = "Open an issue in the browser  (e.g. yt browse DEMO-1)"
 ) {
     private val issueId by argument("ISSUE_ID", help = "Issue ID (e.g. DEMO-1)")
 
